@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">graduation_demo</string>
+    <string name="title_activity_maps">Map</string>
+    <string name="title_activity_main_view">Main_view</string>
+</resources>
