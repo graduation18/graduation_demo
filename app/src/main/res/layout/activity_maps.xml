@@ -21,12 +21,19 @@
         android:layout_centerHorizontal="true"
         android:layout_gravity="bottom"
         android:layout_marginLeft="25dp"
-        android:layout_marginRight="25dp"
         android:layout_marginTop="10dp"
-        android:layout_marginBottom="32dp"
+        android:layout_marginRight="25dp"
+        android:layout_marginBottom="445dp"
         card_view:cardCornerRadius="25dp">
+        <Button
+            android:id="@+id/search_btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:background="@null"
+            android:drawableLeft="@drawable/ic_search_black_24dp" />
 
-        <EditText
+        <AutoCompleteTextView
             android:id="@+id/search"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
