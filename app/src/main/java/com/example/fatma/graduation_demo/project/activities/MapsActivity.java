@@ -1,20 +1,34 @@
 package com.example.fatma.graduation_demo.project.activities;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.content.Context;
+import android.inputmethodservice.Keyboard;
 import android.location.Address;
 import android.location.Geocoder;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.KeyEvent;
+import android.view.View;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
 import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import android.widget.TextView;
 
 import com.example.fatma.graduation_demo.R;
 import com.example.fatma.graduation_demo.project.custom.PlaceAutocompleteAdapter;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.location.places.AutocompletePrediction;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.PlaceBuffer;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -30,10 +44,14 @@ import java.util.Locale;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,GoogleApiClient.OnConnectionFailedListener {
 
+    private static final String TAG ="MapActivity" ;
     private GoogleMap mMap;
     private AutoCompleteTextView Search;
     private PlaceAutocompleteAdapter mPlaceAutocompleteAdapter;
     private GoogleApiClient mGoogleApiClient;
+
+    private static final float DEFAULT_ZOOM = 15f;
+    private Place placee;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,6 +61,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
 
         Search.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
@@ -83,10 +102,83 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         mPlaceAutocompleteAdapter = new PlaceAutocompleteAdapter(this , mGoogleApiClient , latlng_bounds,null);
 
+        Search.setOnItemClickListener(itemAutocompleteClickListener);
+
         Search.setAdapter(mPlaceAutocompleteAdapter);
     }
 
+    private void moveCamera(LatLng latLng, float zoom, String title){
+        Log.d(TAG, "moveCamera: moving the camera to: lat: " + latLng.latitude + ", lng: " + latLng.longitude );
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
 
+        if(!title.equals("My Location")){
+            MarkerOptions options = new MarkerOptions()
+                    .position(latLng)
+                    .title(title);
+            mMap.addMarker(options);
+        }
+
+        hideSoftKeyboard();
+    }
+
+
+    private void hideSoftKeyboard(){
+        this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+    }
+
+
+    private AdapterView.OnItemClickListener itemAutocompleteClickListener = new AdapterView.OnItemClickListener() {
+        @Override
+        public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+            hideSoftKeyboard();
+
+            final AutocompletePrediction item = mPlaceAutocompleteAdapter.getItem(i);
+            final String placeid = item.getPlaceId();
+            PendingResult<PlaceBuffer> place_rsl = Places.GeoDataApi
+                    .getPlaceById(mGoogleApiClient,placeid);
+            place_rsl.setResultCallback(updatedcallback);
+
+
+
+        }
+
+    };
+private ResultCallback<PlaceBuffer> updatedcallback = new ResultCallback<PlaceBuffer>() {
+    @Override
+    public void onResult(@NonNull PlaceBuffer places) {
+        if (!places.getStatus().isSuccess()){
+
+            places.release();
+            return;
+        }
+        final Place place = places.get(0);
+        try {
+
+            place.getAddress();
+            place.getId();
+            place.getName().toString();
+            place.getPhoneNumber();
+            place.getPlaceTypes();
+            place.getViewport();
+            place.getWebsiteUri();
+            place.getAttributions();
+
+            placee = place;
+
+        }catch (NullPointerException e) {
+
+            Log.e(TAG, "onResult: NullPointerException: " + e.getMessage() );
+
+        }
+        moveCamera(new LatLng(place.getViewport().getCenter().latitude,
+                        place.getViewport().getCenter().longitude)
+                , DEFAULT_ZOOM , (String) placee.getName());
+
+
+        places.release();
+    }
+}
+;
 
     @SuppressLint("MissingPermission")
     @Override
